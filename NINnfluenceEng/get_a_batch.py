@@ -22,7 +22,7 @@ def get_a_data_batch():
     db = helper.connect()
     cursor = db.cursor()
     string = """SELECT PT_CAMERA_COOR.ID,PT_CAMERA_COOR.PID,PT_CAMERA_COOR.X,PT_CAMERA_COOR.Y,PT_CAMERA_COOR.T,PT_CAMERA_COOR_ADD_OPTS.THETA,PT_CAMERA_COOR_ADD_OPTS.X_V,PT_CAMERA_COOR_ADD_OPTS.Y_V,PT_CAMERA_COOR_ADD_OPTS.CLASS,ANNOTATION.ID,OBJECT.ID,PT_CAMERA_COOR_ADD_OPTS.CLUSTER 
-                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID NOT IN ('10') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
+                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID NOT IN ('8') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
                         ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"""
     cursor.execute(string)
     results = cursor.fetchall()
@@ -57,7 +57,7 @@ def get_a_data_batch():
             ''' Step 1'''
             min_s,max_s = np.amin(n[:,9]),np.amax(n[:,9])
             scenes = list(range(int(min_s),int(max_s)+1))
-            scenes.remove(10)
+            scenes.remove(8)
             scenario_id = np.random.choice(scenes)
             ''' Step 2'''
             c1 = n[:,9]==scenario_id
@@ -129,7 +129,7 @@ def get_a_evaluation_data_batch(for_dbn):
     db = helper.connect()
     cursor = db.cursor()
     string = """SELECT PT_CAMERA_COOR.ID,PT_CAMERA_COOR.PID,PT_CAMERA_COOR.X,PT_CAMERA_COOR.Y,PT_CAMERA_COOR.T,PT_CAMERA_COOR_ADD_OPTS.THETA,PT_CAMERA_COOR_ADD_OPTS.X_V,PT_CAMERA_COOR_ADD_OPTS.Y_V,PT_CAMERA_COOR_ADD_OPTS.CLASS,ANNOTATION.ID,OBJECT.ID,PT_CAMERA_COOR_ADD_OPTS.CLUSTER 
-                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('10') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
+                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('8') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
                         ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"""
     cursor.execute(string)
     results = cursor.fetchall()

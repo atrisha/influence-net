@@ -29,24 +29,37 @@ EVAL_BATCH_SIZE = flags.EVAL_BATCH_SIZE
 EVAL_FREQUENCY = flags.EVAL_FREQUENCY
 
 def print_summary(results_dict_target,results_dict_predicted):
-    summary_dict = dict()
+    summary_dict_vehicles = dict()
+    summary_dict_pedestrians = dict()
     for t in results_dict_target.keys():
         for window in range(1,91):
             if t in results_dict_predicted.keys():
                 if t+window in results_dict_predicted[t].keys():
                     for agent in results_dict_predicted[t][t+window].keys():
+                        agent_id,_,agent_class = agent.partition('#')
                         x_p,y_p = results_dict_predicted[t][t+window][agent][0] , results_dict_predicted[t][t+window][agent][1]
                         if t+window in results_dict_target.keys():
                             if agent in results_dict_target[t+window].keys():
                                 x,y = results_dict_target[t+window][agent][0] , results_dict_target[t+window][agent][1]
                                 delta = math.sqrt((x - x_p)**2 + (y - y_p)**2)
-                                if window in summary_dict.keys() :
-                                    summary_dict[window].append(delta)
+                                if agent_class == '1.0':
+                                    if window in summary_dict_vehicles.keys() :
+                                        summary_dict_vehicles[window].append(delta)
+                                    else:
+                                        summary_dict_vehicles[window] = [delta]
                                 else:
-                                    summary_dict[window] = [delta]
-    for k,v in summary_dict.items():
+                                    if window in summary_dict_pedestrians.keys() :
+                                        summary_dict_pedestrians[window].append(delta)
+                                    else:
+                                        summary_dict_pedestrians[window] = [delta]
+    print('-------------------------vehicles---------------------------')
+    for k,v in summary_dict_vehicles.items():
         print(k,np.mean(v))
-    pickle.dump(summary_dict, open( "save_result_summary_nn.p", "wb" ))
+    print('-------------------------pedestrians---------------------------')
+    for k,v in summary_dict_pedestrians.items():
+        print(k,np.mean(v))
+    pickle.dump(summary_dict_vehicles, open( "save_result_summary_vehicles_nn_8.p", "wb" ))
+    pickle.dump(summary_dict_pedestrians, open( "save_result_summary_pedestrians_nn_8.p", "wb" ))
     
 
 def order_by(p):
@@ -151,7 +164,7 @@ def get_real_frames():
     db = helper.connect()
     cursor = db.cursor()
     string = """SELECT PT_CAMERA_COOR.ID,PT_CAMERA_COOR.PID,PT_CAMERA_COOR.X,PT_CAMERA_COOR.Y,PT_CAMERA_COOR.T,PT_CAMERA_COOR_ADD_OPTS.THETA,PT_CAMERA_COOR_ADD_OPTS.X_V,PT_CAMERA_COOR_ADD_OPTS.Y_V,PT_CAMERA_COOR_ADD_OPTS.CLASS,ANNOTATION.ID,OBJECT.ID,PT_CAMERA_COOR_ADD_OPTS.CLUSTER 
-                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('10') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
+                    FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('8') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID 
                         ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"""
     cursor.execute(string)
     results = cursor.fetchall()
@@ -274,7 +287,7 @@ def main(_):
         fps = 30
         db = helper.connect()
         cursor = db.cursor()
-        string = "SELECT PT_CAMERA_COOR.ID,PT_CAMERA_COOR.PID,PT_CAMERA_COOR.X,PT_CAMERA_COOR.Y,PT_CAMERA_COOR.T,PT_CAMERA_COOR_ADD_OPTS.THETA,PT_CAMERA_COOR_ADD_OPTS.X_V,PT_CAMERA_COOR_ADD_OPTS.Y_V,PT_CAMERA_COOR_ADD_OPTS.CLASS FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('10') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"
+        string = "SELECT PT_CAMERA_COOR.ID,PT_CAMERA_COOR.PID,PT_CAMERA_COOR.X,PT_CAMERA_COOR.Y,PT_CAMERA_COOR.T,PT_CAMERA_COOR_ADD_OPTS.THETA,PT_CAMERA_COOR_ADD_OPTS.X_V,PT_CAMERA_COOR_ADD_OPTS.Y_V,PT_CAMERA_COOR_ADD_OPTS.CLASS FROM PT_CAMERA_COOR,PT_CAMERA_COOR_ADD_OPTS,OBJECT,ANNOTATION WHERE OBJECT.ID = PT_CAMERA_COOR.PID AND ANNOTATION.ID=OBJECT.PID AND ANNOTATION.ID IN ('8') AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"
         cursor.execute(string)
         results = cursor.fetchall()
         
@@ -293,7 +306,8 @@ def main(_):
         prediction_frame_dict = dict()
         
         for t in range(int(n[0,4]),int(n[n.shape[0]-1,4]+1)):
-        #for t in range(1610 , int(n[n.shape[0]-1,4]+1)):
+        #for t in range(int(n[0,4]) , int(n[0,4]) + 20):
+            #print('original range',int(n[0,4]),int(n[n.shape[0]-1,4]+1))
             w1 = np.where((n[:,4] == t))
             density = len(w1[0])
             agent_list = []
@@ -307,6 +321,7 @@ def main(_):
             ground_truth[t] = OrderedDict()
             for agents in agent_list:
                 agent_id = int(agents[6])
+                agent_class = str(agents[5])
                 if t == 106:
                     deb = True
                 if has_key(ground_truth, agent_id,t):
@@ -317,15 +332,15 @@ def main(_):
                     predicted_path[str(agent_id)+'-'+str(t)] = [(agents[0],agents[1])]
                 
                 if t in results_dict_target.keys():
-                    results_dict_target[t][agent_id] = (agents[0],agents[1])
+                    results_dict_target[t][str(agent_id) +'#'+ agent_class] = (agents[0],agents[1])
                 else:
                     results_dict_target[t] = dict()
-                    results_dict_target[t][agent_id] = (agents[0],agents[1])
+                    results_dict_target[t][str(agent_id) +'#'+ agent_class] = (agents[0],agents[1])
     
-                cluster,M,dummy = lm.match2([ground_truth[t][agent_id]],(agent_id,t),True)
-                if len(cluster) == 0 :
+                cluster,_,_ = lm.match2([ground_truth[t][agent_id]],str(int(float(agent_class))),True)
+                '''if len(cluster) == 0 :
                     cluster,M,dummy = lm.match([ground_truth[t][agent_id]],(agent_id,t),True)
-                    cluster = list(cluster.keys())
+                    cluster = list(cluster.keys())'''
                 #cluster_id = list(cluster.keys())[0]
                 cluster_id = cluster
                 tail = list(ground_truth[t][agent_id])
@@ -343,7 +358,6 @@ def main(_):
                     string = string + "?,"
                 string = string + "? ) AND PT_CAMERA_COOR_ADD_OPTS.ID = PT_CAMERA_COOR.ID AND PT_CAMERA_COOR.PID NOT IN (?) ORDER BY CAST(PT_CAMERA_COOR.T AS UNSIGNED) ASC"
                 q_list = cluster_id + [str(agent_id)]
-                #print(string,q_list)
                 cursor.execute(string,q_list)
                 res_1 = cursor.fetchone()
                 while res_1 is not None:
@@ -379,12 +393,13 @@ def main(_):
             
             
             for window in range(90):
-                print('window',window)
+                #print('window',window)
                 cnt = 0
                 skip = False
                 for agents in agent_list:
                     density_value = len(agent_list)
                     agent_id = int(agents[6])
+                    agent_class = str(agents[5])
                     head = prediction_at_current_ts[agent_id]
                     tail = list(ground_truth[t][int(agents[6])])
                     if prediction_at_current_ts[agent_id] is None:
@@ -416,10 +431,10 @@ def main(_):
                     x_a,y_a = output[0][0] , output[0][1]
                     
                     ''' uncomment following 2 lines for dynamically changing cluster id with prediction'''
-                    cluster,M,dummy = lm.match2([trail],(agent_id,t),True)
-                    if len(cluster) == 0 :
+                    cluster,M,dummy = lm.match2([trail],str(int(float(agent_class))),True)
+                    '''if len(cluster) == 0 :
                         cluster,M,dummy = lm.match([ground_truth[t][agent_id]],(agent_id,t),True)
-                        cluster = list(cluster.keys())
+                        cluster = list(cluster.keys())'''
                     new_cluster_id = cluster[0]
                     #new_cluster_id = agent_cluster_map[agent_id]
                     
@@ -455,14 +470,14 @@ def main(_):
                     
                     if t in results_dict_predicted.keys():
                         if t+window+1 in results_dict_predicted[t].keys():
-                            results_dict_predicted[t][t+window+1][agent_id] = (new_x,new_y)
+                            results_dict_predicted[t][t+window+1][str(agent_id) +'#'+ agent_class] = (new_x,new_y)
                         else:
                             results_dict_predicted[t][t+window+1] = dict()
-                            results_dict_predicted[t][t+window+1][agent_id] = (new_x,new_y)
+                            results_dict_predicted[t][t+window+1][str(agent_id) +'#'+ agent_class] = (new_x,new_y)
                     else:
                         results_dict_predicted[t] = dict()
                         results_dict_predicted[t][t+window+1] = dict()
-                        results_dict_predicted[t][t+window+1][agent_id] = (new_x,new_y)
+                        results_dict_predicted[t][t+window+1][str(agent_id) +'#'+ agent_class] = (new_x,new_y)
                     
                     
                     #print(new_x  , new_y  ,new_x_v  , new_y_v  , agents[5],  new_cluster_id  , density_value )
@@ -497,8 +512,9 @@ def main(_):
                             if env_agent_id not in prediction_frame_dict[t][t+window+1].keys():
                                 continue
                             agent_s_cluster = int(prediction_frame_dict[t][t+window+1][env_agent_id]['ego'][5])
-                            env_batch_slice[agent_s_cluster,obj_ind] = np.reshape(np.copy(prediction_frame_dict[t][t+window+1][env_agent_id]['ego']) , newshape = (7) )
-                            obj_ind = obj_ind + 1
+                            if agent_s_cluster < 5:
+                                env_batch_slice[agent_s_cluster,obj_ind] = np.reshape(np.copy(prediction_frame_dict[t][t+window+1][env_agent_id]['ego']) , newshape = (7) )
+                                obj_ind = obj_ind + 1
                     new_env_vector = env_summary.encode_env(env_batch_slice)
                     if t+window+1 not in prediction_frame_dict[t].keys():
                         continue
@@ -513,8 +529,8 @@ def main(_):
                                                         prediction_at_current_ts[agent_id] 
                     
             print('-------- : ',t)
-        pickle.dump(ground_truth, open( "save_ground_truth_nn.p", "wb" ))
-        pickle.dump(predicted_path, open( "save_predicted_path_nn.p", "wb" ))
+        pickle.dump(ground_truth, open( "save_ground_truth_nn_8.p", "wb" ))
+        pickle.dump(predicted_path, open( "save_predicted_path_nn_8.p", "wb" ))
         
         print_summary(results_dict_target,results_dict_predicted)
         

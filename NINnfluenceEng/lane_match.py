@@ -19,6 +19,11 @@ class Lane_Match():
     def __init__(self,dist_cache):
         self.lanes,self.cluster_list = self.get_lanes()
         self.dist_cache = dist_cache
+        self.cluster_directions = dict()
+        self.cluster_directions[0] = dict()
+        self.cluster_directions[0][3] = [(),()]
+        self.cluster_directions[0][4] = [(),()]
+        self.cluster_directions[1] = dict()
         '''
         Constructor
         '''
@@ -133,72 +138,78 @@ class Lane_Match():
             ind= ind + 1
         return cluster,M,cluster_details
     
-    def match2(self,data_list,tj_ts_id_tuple,partial):
+    def match2(self,data_list,agent_class,partial):
+        #print(data_list[0][0][0],data_list[0][0][1],data_list[0][-1][0],data_list[0][-1][1],agent_class)
         cluster = dict()
         cluster_details = dict()
         M,M2 = [],[]
         cl = []
         ind = 0
         if partial:
-            if data_list[0][0][0] < -4.5 and  data_list[0][0][1] > 16.7:
+            if data_list[0][0][0] < -3 and  data_list[0][0][1] > 16.7 and agent_class == '1':
                 M.append(0)
-            if data_list[0][0][0] > 0. and data_list[0][0][1] < 18.:
+            if data_list[0][0][0] > 0. and data_list[0][0][1] < 18.  and agent_class == '1':
                 M.append(1)
-            if data_list[0][0][0] < -5. and data_list[0][0][1] > 16.:
+            if data_list[0][0][0] < -5. and data_list[0][0][1] > 16.  and agent_class == '1':
                 M.append(2)
-            if -7 < data_list[0][0][0] < -3. and data_list[0][0][1] < 13.:
+            if -7 < data_list[0][0][0] < -3. and data_list[0][0][1] < 13.  and agent_class == '0':
+                M.append(3)
+            if data_list[0][0][0] < -5.6 and data_list[0][0][1] > 13.  and agent_class == '0':
                 M.append(4)
-            if data_list[0][0][0] < -5.6 and data_list[0][0][1] > 13.:
-                M.append(5)
-            if data_list[0][-1][0] > 0. and data_list[0][-1][1] < 18:
+            
+            if data_list[0][-1][0] > 0. and data_list[0][-1][1] < 18  and agent_class == '1':
                 M2.append(0)
-            if data_list[0][-1][0] < -5. and data_list[0][-1][1] < 16:
+            if data_list[0][-1][0] < 0. and data_list[0][-1][1] < 16  and agent_class == '1':
                 M2.append(1)
-            if data_list[0][-1][0] < -6. and data_list[0][-1][1] < 15.3:
+            if data_list[0][-1][0] < -5. and data_list[0][-1][1] < 19  and agent_class == '1':
                 M2.append(2)
-            if data_list[0][-1][0] < -5.6 and data_list[0][-1][1] >13.:
+            if data_list[0][-1][0] < -5.6 and data_list[0][-1][1] >13.  and agent_class == '0':
+                M2.append(3)
+            if data_list[0][-1][0] > -7. and data_list[0][-1][1] < 13 and agent_class == '0':
                 M2.append(4)
-            if -3 > data_list[0][-1][0] > -7. and data_list[0][-1][1] < 13:
-                M2.append(5)
             for i in range(6):
                 if i in M and i in M2:
                     cl.append(i)
             if len(cl) > 1:
                 return cl,cl,cl
             else:
-                return M,M,M
+                if len(M) == 0:
+                    M = [0,1,2] if agent_class == '1' else [3,4] 
+                    return M,M,M
+                else:
+                    return M,M,M
                 
                 
         for ctr in range(len(data_list)):
-            if data_list[ctr][0][0] < -4.5 and data_list[ctr][0][1] > 16.7 and data_list[ctr][-1][0] > 0. and data_list[ctr][-1][1] < 18:
+            if data_list[ctr][0][0] < -3 and data_list[ctr][0][1] > 16.7 and data_list[ctr][-1][0] > 0. and data_list[ctr][-1][1] < 18 and data_list[ctr][0][5] == '1':
                 if 0 in cluster.keys():
                     cluster[0].append(ind)
                     cluster_details[0].append(data_list[ctr])
                 else:
                     cluster[0] = [ind]
                     cluster_details[0] = [data_list[ctr]]
-            elif data_list[ctr][0][0] > 0. and data_list[ctr][0][1] < 18. and data_list[ctr][-1][0] < -5. and data_list[ctr][-1][1] < 16:
+            elif data_list[ctr][0][0] > 0. and data_list[ctr][0][1] < 18. and data_list[ctr][-1][0] < 0. and data_list[ctr][-1][1] < 16 and data_list[ctr][0][5] == '1':
                 if 1 in cluster.keys():
                     cluster[1].append(ind)
                     cluster_details[1].append(data_list[ctr])
                 else:
                     cluster[1] = [ind]
                     cluster_details[1] = [data_list[ctr]]
-            elif data_list[ctr][0][0] < -5. and data_list[ctr][0][1] > 16. and data_list[ctr][-1][0] < -6. and data_list[ctr][-1][1] < 15.3:
+            elif data_list[ctr][0][0] < -5. and data_list[ctr][0][1] > 16. and data_list[ctr][-1][0] < -5. and data_list[ctr][-1][1] < 19 and data_list[ctr][0][5] == '1':
                 if 2 in cluster.keys():
                     cluster[2].append(ind)
                     cluster_details[2].append(data_list[ctr])
                 else:
                     cluster[2] = [ind]
                     cluster_details[2] = [data_list[ctr]]
-            elif -7 < data_list[ctr][0][0] < -3. and data_list[ctr][0][1] < 13. and data_list[ctr][-1][0] < -5.6 and data_list[ctr][-1][1] >13.:
+            elif -7 < data_list[ctr][0][0] < -3. and data_list[ctr][0][1] < 13. and data_list[ctr][-1][0] < -5.6 and data_list[ctr][-1][1] >13. and data_list[ctr][0][5] == '0':
                 if 3 in cluster.keys():
                     cluster[3].append(ind)
                     cluster_details[3].append(data_list[ctr])
                 else:
                     cluster[3] = [ind]
                     cluster_details[3] = [data_list[ctr]]
-            elif data_list[ctr][0][0] < -5.6 and data_list[ctr][0][1] > 13. and -3 > data_list[ctr][-1][0] > -7. and data_list[ctr][-1][1] < 13:
+            elif data_list[ctr][0][0] < -5.6 and data_list[ctr][0][1] > 13. and -3 > data_list[ctr][-1][0] > -7. and data_list[ctr][-1][1] < 13 and data_list[ctr][0][5] == '0':
                 if 4 in cluster.keys():
                     cluster[4].append(ind)
                     cluster_details[4].append(data_list[ctr])
