@@ -1,7 +1,7 @@
 '''
 Created on Dec 2, 2016
 
-@author: atri
+@author: atrisha
 '''
 
 from trajectory_cluster import *

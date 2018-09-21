@@ -1,7 +1,7 @@
 '''
 Created on Dec 12, 2016
 
-@author: atri
+@author: atrisha
 '''
 import numpy as np
 import random

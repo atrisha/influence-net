@@ -1,7 +1,7 @@
 '''
 Created on Feb 1, 2017
 
-@author: atri
+@author: atrisha
 '''
 import numpy as np
 

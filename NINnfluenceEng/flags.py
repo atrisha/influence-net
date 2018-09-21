@@ -1,7 +1,7 @@
 '''
 Created on Jan 30, 2017
 
-@author: atri
+@author: atrisha
 '''
 
 GRID_SIZE_ROWS = 5

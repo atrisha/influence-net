@@ -1,7 +1,7 @@
 '''
 Created on Jan 25, 2017
 
-@author: atri
+@author: atrisha
 '''
 import numpy as np
 import db_helper as helper

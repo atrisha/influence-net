@@ -1,7 +1,7 @@
 '''
 Created on Feb 6, 2017
 
-@author: atri
+@author: atrisha
 '''
 import nn_engine_input
 import numpy as np
